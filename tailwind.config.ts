@@ -17,6 +17,13 @@ export default {
         display: ['Playfair Display', 'serif'],
         body: ['Inter', 'sans-serif'],
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            'h1,h2,h3': { fontFamily: 'Playfair Display, serif' },
+          },
+        },
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -97,5 +104,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require('@tailwindcss/typography')],
 } satisfies Config;

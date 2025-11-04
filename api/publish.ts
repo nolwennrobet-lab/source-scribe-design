@@ -170,7 +170,7 @@ export default async function handler(req: any, res: any) {
 
     // Write full article JSON
     const articlePath = `content/articles/${slug}.json`;
-    await githubPut(articlePath, JSON.stringify(articleForWrite, null, 2), `feat(article): publish ${slug} from admin`);
+    const putArticleRes = await githubPut(articlePath, JSON.stringify(articleForWrite, null, 2), `feat(article): publish ${slug} from admin`);
 
     // Update index.json
     type Meta = Pick<Article, "title" | "slug" | "category" | "tags" | "cover" | "excerpt" | "date"> & { readingMinutes?: number };
@@ -201,7 +201,35 @@ export default async function handler(req: any, res: any) {
     const bySlug = new Map<string, Meta>(list.map((m) => [m.slug, m]));
     bySlug.set(meta.slug, meta);
     const nextList = Array.from(bySlug.values()).sort((a, b) => (a.date < b.date ? 1 : -1));
-    await githubPut(indexPath, JSON.stringify(nextList, null, 2), `chore(cms): update articles index (${slug})`);
+    const putIndexRes = await githubPut(indexPath, JSON.stringify(nextList, null, 2), `chore(cms): update articles index (${slug})`);
+
+    // Build commit/links payload
+    const commitSha: string | undefined = putIndexRes?.commit?.sha || putArticleRes?.commit?.sha;
+    const commitUrl: string | undefined = putIndexRes?.commit?.html_url || putArticleRes?.commit?.html_url;
+    const articleFileUrl: string | undefined = putArticleRes?.content?.html_url;
+    const indexFileUrl: string | undefined = putIndexRes?.content?.html_url;
+
+    // Optionally trigger Vercel deployment
+    let deploy = { triggered: false as boolean, error: undefined as string | undefined };
+    const deployHook = process.env.VERCEL_DEPLOY_HOOK_URL;
+    if (deployHook) {
+      try {
+        const dh = await fetch(deployHook, { method: "POST" });
+        deploy.triggered = dh.ok;
+        if (!dh.ok) deploy.error = `Hook HTTP ${dh.status}`;
+      } catch (e: any) {
+        deploy.error = String(e?.message || e);
+      }
+    }
+
+    res.status(200).json({
+      ok: true,
+      url: `/articles/${slug}`,
+      commit: commitSha ? { sha: commitSha, url: commitUrl } : undefined,
+      files: { article: articleFileUrl, index: indexFileUrl },
+      deploy,
+    });
+    return;
   } catch (e: any) {
     const message = e?.message ? String(e.message) : String(e);
     // Try to extract status code if present in the message like "GitHub PUT 422: ..."
@@ -210,13 +238,6 @@ export default async function handler(req: any, res: any) {
     res.status(500).json({ ok: false, error: "Échec de la publication GitHub.", details: { status, message } });
     return;
   }
-
-  const deployHook = process.env.VERCEL_DEPLOY_HOOK_URL;
-  if (deployHook) {
-    try { await fetch(deployHook, { method: "POST" }); } catch {}
-  }
-
-  res.status(200).json({ ok: true, url: `/articles/${slug}` });
 }
 
 
