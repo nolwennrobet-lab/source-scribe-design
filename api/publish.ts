@@ -10,6 +10,7 @@ type Article = {
   body: string; // markdown
   author: string;
   date: string; // ISO
+  readingMinutes?: number;
 };
 
 function toBase64(content: string | Uint8Array) {
@@ -152,20 +153,36 @@ export default async function handler(req: any, res: any) {
   const slug = article.slug;
 
   try {
+    // Ensure readingMinutes exists (compute as fallback)
+    function estimateMinutes(text: string, wpm = 200) {
+      const words = text
+        .replace(/[`*_#>!\[\]\(\)`~\-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .split(" ")
+        .filter(Boolean).length;
+      return Math.max(1, Math.round(words / wpm));
+    }
+    const readingMinutes = Number(article.readingMinutes) > 0
+      ? Number(article.readingMinutes)
+      : estimateMinutes(`${article.excerpt || ""}\n\n${article.body || ""}`);
+    const articleForWrite = { ...article, readingMinutes } as Article & { readingMinutes: number };
+
     // Write full article JSON
     const articlePath = `content/articles/${slug}.json`;
-    await githubPut(articlePath, JSON.stringify(article, null, 2), `feat(article): publish ${slug} from admin`);
+    await githubPut(articlePath, JSON.stringify(articleForWrite, null, 2), `feat(article): publish ${slug} from admin`);
 
     // Update index.json
-    type Meta = Pick<Article, "title" | "slug" | "category" | "tags" | "cover" | "excerpt" | "date">;
+    type Meta = Pick<Article, "title" | "slug" | "category" | "tags" | "cover" | "excerpt" | "date"> & { readingMinutes?: number };
     const meta: Meta = {
-      title: article.title,
-      slug: article.slug,
-      category: article.category,
-      tags: article.tags || [],
-      cover: article.cover,
-      excerpt: article.excerpt,
-      date: article.date,
+      title: articleForWrite.title,
+      slug: articleForWrite.slug,
+      category: articleForWrite.category,
+      tags: articleForWrite.tags || [],
+      cover: articleForWrite.cover,
+      excerpt: articleForWrite.excerpt,
+      date: articleForWrite.date,
+      readingMinutes,
     };
 
     const indexPath = `content/articles/index.json`;

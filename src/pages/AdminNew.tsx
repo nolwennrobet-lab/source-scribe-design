@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import MarkdownPreview from "@/components/MarkdownPreview";
 import { toast } from "sonner";
+import { Clock } from "lucide-react";
 
 type Article = {
   title: string;
@@ -22,6 +23,7 @@ type Article = {
   body: string;
   author: string;
   date: string; // ISO
+  readingMinutes: number;
 };
 
 function slugify(input: string): string {
@@ -31,6 +33,17 @@ function slugify(input: string): string {
     .replace(/\p{Diacritic}/gu, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
+}
+
+// Estimate reading time helper
+function estimateMinutes(text: string, wpm = 200) {
+  const words = text
+    .replace(/[`*_#>!\[\]\(\)`~\-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean).length;
+  return Math.max(1, Math.round(words / wpm));
 }
 
 const DRAFT_KEY = "draft:new-article";
@@ -49,13 +62,18 @@ const AdminNew = () => {
   const [date, setDate] = useState<string>(new Date().toISOString());
   const [submitting, setSubmitting] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
-  const [errors, setErrors] = useState<{ title?: string; category?: string; slug?: string; body?: string; date?: string; cover?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ title?: string; category?: string; slug?: string; body?: string; date?: string; cover?: string; password?: string; readingMinutes?: string }>({});
   const [serverError, setServerError] = useState<{ message?: string; details?: string; missingEnv?: string[] }>({});
   const [debugOpen, setDebugOpen] = useState(false);
   const [lastRequest, setLastRequest] = useState<any>(null);
   const [lastResponse, setLastResponse] = useState<any>(null);
   const previewRef = useRef<HTMLDivElement | null>(null);
   const [coverFileUrl, setCoverFileUrl] = useState<string | null>(null);
+  // Multiple local images for preview only
+  const [localAssets, setLocalAssets] = useState<{ id: number; file: File; url: string; alt?: string }[]>([]);
+  const nextLocalIdRef = useRef<number>(1);
+  const manualReadingOverrideRef = useRef(false);
+  const [readingMinutes, setReadingMinutes] = useState<number>(() => estimateMinutes(`${excerpt}\n\n${body}`));
 
   // Undo history for body textarea
   type BodySnapshot = { body: string; selStart: number; selEnd: number; scrollTop: number };
@@ -96,6 +114,7 @@ const AdminNew = () => {
         setBody(d.body || "");
         setAuthor(d.author || "À la Brestoise");
         setDate(d.date || new Date().toISOString());
+        if (typeof d.readingMinutes === "number" && d.readingMinutes > 0) setReadingMinutes(d.readingMinutes);
       }
     } catch {
       // ignore
@@ -106,6 +125,13 @@ const AdminNew = () => {
   useEffect(() => {
     if (!slugTouched) setSlug(slugify(title));
   }, [title, slugTouched]);
+
+  // Auto-update reading time from excerpt/body unless manually overridden
+  useEffect(() => {
+    if (!manualReadingOverrideRef.current) {
+      setReadingMinutes(estimateMinutes(`${excerpt}\n\n${body}`));
+    }
+  }, [body, excerpt]);
 
   // Helpers: history push & undo restore
   function pushBodySnapshot() {
@@ -164,25 +190,39 @@ const AdminNew = () => {
     body,
     author,
     date,
-  }), [title, slug, category, tags, cover, excerpt, body, author, date]);
+    readingMinutes,
+  }), [title, slug, category, tags, cover, excerpt, body, author, date, readingMinutes]);
 
   async function handlePublish(e: React.FormEvent) {
     e.preventDefault();
     setServerError({});
-    const nextErrors: { title?: string; category?: string; slug?: string; body?: string; date?: string; cover?: string; password?: string } = {};
+    const nextErrors: { title?: string; category?: string; slug?: string; body?: string; date?: string; cover?: string; password?: string; readingMinutes?: string } = {} as any;
     if (!article.title.trim()) nextErrors.title = "Le titre est obligatoire.";
     const allowed = new Set(["Commerces & lieux", "Expérience", "Beauté"]);
     if (!article.category || !allowed.has(article.category)) nextErrors.category = "La thématique est obligatoire.";
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(article.slug)) nextErrors.slug = "Le slug ne peut contenir que des lettres, chiffres et tirets.";
     if (!article.body || article.body.trim().length < 50) nextErrors.body = "Le contenu est trop court.";
-    if (!article.cover || !article.cover.trim()) nextErrors.cover = "Fournissez une URL d’image accessible pour la publication.";
+    if (!article.readingMinutes || article.readingMinutes < 1) nextErrors.readingMinutes = "Temps de lecture invalide.";
+    // Block publish if body still contains preview-only local assets
+    if (/\]\(local:[^)]+\)/.test(article.body)) {
+      nextErrors.body = "Remplacez les images locales par des URLs publiques avant publication.";
+    }
+    // Cover URL is optional; if provided, must be a valid URL
+    if (article.cover && article.cover.trim().length > 0) {
+      try {
+        // eslint-disable-next-line no-new
+        new URL(article.cover);
+      } catch {
+        nextErrors.cover = "L’URL d’image n’est pas valide.";
+      }
+    }
     if (article.date) {
       const d = new Date(article.date);
       if (isNaN(d.getTime())) nextErrors.date = "La date n’est pas valide.";
     }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
-      const order: (keyof typeof nextErrors)[] = ["title", "category", "slug", "body", "date", "password"];
+      const order: (keyof typeof nextErrors)[] = ["title", "category", "slug", "body", "readingMinutes", "date", "password"];
       const first = order.find((k) => nextErrors[k]);
       // scroll to first invalid field
       requestAnimationFrame(() => {
@@ -270,27 +310,26 @@ const AdminNew = () => {
   function toggleHeading(level: 1 | 2 | 3) {
     transformSelection((text, selStart, selEnd, ta) => {
       const prefix = "#".repeat(level) + " ";
-      const textBefore = text.slice(0, selStart);
-      const textSel = text.slice(selStart, selEnd);
-      const textAfter = text.slice(selEnd);
-      // Determine line range
-      const lineStart = textBefore.lastIndexOf("\n") + 1;
-      const lineEnd = selEnd + textAfter.indexOf("\n");
-      const targetStart = lineStart;
-      const targetEnd = selEnd === selStart && textSel.length === 0 ? (text.indexOf("\n", selStart) === -1 ? text.length : text.indexOf("\n", selStart)) : selEnd;
-      const block = text.slice(targetStart, targetEnd);
+      // Compute full lines covered by selection (or current line if empty)
+      const startLineStart = text.lastIndexOf("\n", selStart - 1) + 1;
+      const endLineEndIdx = (() => {
+        const endIdx = selEnd > selStart ? selEnd : selStart;
+        const n = text.indexOf("\n", endIdx);
+        return n === -1 ? text.length : n;
+      })();
+      const block = text.slice(startLineStart, endLineEndIdx);
       const lines = block.split("\n");
       let delta = 0;
-      const nextLines = lines.map((l) => {
-        const hasSame = l.startsWith(prefix);
-        const withoutHashes = l.replace(/^\s*#{1,6}\s+/, "").trimStart();
-        const nextLine = hasSame ? withoutHashes : prefix + withoutHashes;
-        delta += nextLine.length - l.length;
-        return nextLine;
+      const nextLines = lines.map((line) => {
+        const same = line.startsWith(prefix);
+        const stripped = line.replace(/^\s*#{1,6}\s+/, "").replace(/^\s+/, "");
+        const out = same ? stripped : prefix + stripped;
+        delta += out.length - line.length;
+        return out;
       });
       const nextBlock = nextLines.join("\n");
-      const nextText = text.slice(0, targetStart) + nextBlock + text.slice(targetEnd);
-      const newSelStart = selStart + (selStart === targetStart ? 0 : 0);
+      const nextText = text.slice(0, startLineStart) + nextBlock + text.slice(endLineEndIdx);
+      const newSelStart = selStart; // Keep caret start
       const newSelEnd = selEnd + delta;
       return { next: nextText, selStart: newSelStart, selEnd: newSelEnd };
     });
@@ -449,11 +488,93 @@ const AdminNew = () => {
                       }} />
                       <p className="text-sm text-muted-foreground mt-1">Aperçu local uniquement. Pour publier, fournissez une URL d’image accessible.</p>
                     </div>
+                    {/* Multiple local images for preview only */}
+                    <div className="pt-4">
+                      <Label htmlFor="localAssets">Images locales (aperçu uniquement)</Label>
+                      <Input
+                        id="localAssets"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          if (files.length === 0) return;
+                          const items = files.map((file) => {
+                            const id = nextLocalIdRef.current++;
+                            const url = URL.createObjectURL(file);
+                            return { id, file, url };
+                          });
+                          setLocalAssets((prev) => [...prev, ...items]);
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                      {localAssets.length > 0 && (
+                        <div className="mt-2 grid grid-cols-3 gap-2">
+                          {localAssets.map((a) => (
+                            <div key={a.id} className="border rounded p-2 flex flex-col gap-2 items-stretch">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={a.url} alt={a.alt || "image locale"} className="w-full h-20 object-cover rounded" />
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                  const ta = bodyRef.current;
+                                  if (!ta) return;
+                                  pushBodySnapshot();
+                                  const start = ta.selectionStart ?? 0;
+                                  const end = ta.selectionEnd ?? start;
+                                  const token = `![${a.alt || ""}](local:${a.id})`;
+                                  const next = body.slice(0, start) + token + body.slice(end);
+                                  setBody(next);
+                                  requestAnimationFrame(() => {
+                                    ta.focus();
+                                    ta.setSelectionRange(start + token.length, start + token.length);
+                                  });
+                                }}
+                              >
+                                Insérer
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">Utilisez le bouton « Insérer » pour référencer l’image dans le corps avec <code>local:&lt;id&gt;</code>.</p>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="excerpt">Chapo / Extrait</Label>
                     <Textarea id="excerpt" value={excerpt} onChange={(e) => setExcerpt(e.target.value)} rows={3} />
+                  </div>
+
+                  {/* Reading time */}
+                  <div className="space-y-2">
+                    <Label>Temps de lecture (min)</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={readingMinutes}
+                        onChange={(e) => {
+                          manualReadingOverrideRef.current = true;
+                          const val = Number(e.target.value || 1);
+                          setReadingMinutes(Math.max(1, val));
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          manualReadingOverrideRef.current = false;
+                          setReadingMinutes(estimateMinutes(`${excerpt}\n\n${body}`));
+                        }}
+                      >
+                        Recalculer
+                      </Button>
+                      <span className="text-xs text-muted-foreground">Auto: {estimateMinutes(`${excerpt}\n\n${body}`)} min</span>
+                    </div>
+                    {errors as any && (errors as any).readingMinutes && <p className="text-sm text-red-600 mt-1">{(errors as any).readingMinutes}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -566,6 +687,18 @@ const AdminNew = () => {
                   <div className="p-4">
                     <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground leading-tight mb-4">{title || "(Sans titre)"}</h1>
                     {date && <p className="text-muted-foreground mb-4">{new Date(date).toLocaleDateString("fr-FR")}</p>}
+                    <div className="mt-2 mb-2 flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" /> {readingMinutes} min
+                      </div>
+                    </div>
+                    {tags.length > 0 && (
+                      <div className="mt-2 mb-4 flex flex-wrap gap-2">
+                        {tags.map((t) => (
+                          <span key={t} className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs">{t}</span>
+                        ))}
+                      </div>
+                    )}
                     {excerpt && <p className="mb-4 text-foreground">{excerpt}</p>}
                     {(coverFileUrl || cover) && (
                       <div className="aspect-[16/9] rounded-2xl overflow-hidden bg-muted mb-6">
@@ -573,7 +706,14 @@ const AdminNew = () => {
                         <img src={coverFileUrl || cover} alt="Couverture" className="w-full h-full object-cover" />
                       </div>
                     )}
-                    <MarkdownPreview markdown={body || ""} />
+                    <MarkdownPreview
+                      markdown={body || ""}
+                      localMap={useMemo(() => {
+                        const m: Record<string, string> = {};
+                        for (const a of localAssets) m[`local:${a.id}`] = a.url;
+                        return m;
+                      }, [localAssets])}
+                    />
                   </div>
                 </div>
               </div>

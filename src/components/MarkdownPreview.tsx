@@ -7,6 +7,8 @@ import clsx from "clsx";
 type Props = {
   markdown: string;
   className?: string;
+  // Map like { "local:1": "blob:..." }
+  localMap?: Record<string, string>;
 };
 
 const LazyMarkdownImage: React.FC<React.ImgHTMLAttributes<HTMLImageElement>> = (props) => {
@@ -38,13 +40,18 @@ const LazyMarkdownImage: React.FC<React.ImgHTMLAttributes<HTMLImageElement>> = (
   );
 };
 
-const MarkdownPreview: React.FC<Props> = ({ markdown, className }) => {
+const MarkdownPreview: React.FC<Props> = ({ markdown, className, localMap }) => {
   return (
-    <div className={clsx("prose prose-neutral dark:prose-invert max-w-none", className)}>
+    <div className={clsx("prose prose-neutral dark:prose-invert max-w-none prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl", className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks]}
         components={{
-          img: (props) => <LazyMarkdownImage {...props} />,
+          img: (props) => {
+            // Resolve preview-only local asset placeholders
+            const src = props.src || "";
+            const resolved = src.startsWith("local:") && localMap ? (localMap[src] || src) : src;
+            return <LazyMarkdownImage {...props} src={resolved} />;
+          },
         }}
       >
         {markdown}

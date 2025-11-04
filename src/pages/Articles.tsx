@@ -43,9 +43,10 @@ const Articles = () => {
         title: p.title,
         excerpt: p.summary,
         image: p.heroImage ?? "/placeholder.svg",
-        category: labelForTag(p.tags && p.tags.length > 0 ? p.tags[0] : undefined),
-        readTime: "5 min",
+        category: p.category || labelForTag(p.tags && p.tags.length > 0 ? p.tags[0] : undefined),
+        readTime: `${p.readingMinutes ?? 5} min`,
         slug: p.slug,
+        tags: p.tags,
       })),
     []
   );

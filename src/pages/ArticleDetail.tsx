@@ -27,7 +27,7 @@ const ArticleDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <ArticleContent article={{ title: post.title, date: post.date, cover: post.heroImage, body: post.body }} />
+      <ArticleContent article={{ title: post.title, date: post.date, cover: post.heroImage, body: post.body, category: (post as any).category, readingMinutes: (post as any).readingMinutes }} />
       <Footer />
     </div>
   );
