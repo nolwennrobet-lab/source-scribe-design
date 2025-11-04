@@ -1,79 +1,54 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ArticleCard from "@/components/ArticleCard";
 import CategoryFilter from "@/components/CategoryFilter";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import beautyHero from "@/assets/beauty-hero.jpg";
-import cafeInterior from "@/assets/cafe-interior.jpg";
-import skincareDetail from "@/assets/skincare-detail.jpg";
-import boutiqueExterior from "@/assets/boutique-exterior.jpg";
+import { postsIndex } from "@/lib/content";
+import { site } from "@/lib/siteContent";
 
 const Articles = () => {
-  const categories = [
-    "Tous",
-    "Beauté",
-    "Nouveaux commerces",
-    "Expériences & Lieux",
-    "Événements",
-    "Portraits",
-    "Science & Décryptage"
-  ];
+  function normalize(s: string): string {
+    return s
+      .toLowerCase()
+      .normalize("NFD").replace(/\p{Diacritic}/gu, "")
+      .trim();
+  }
+
+  function labelForTag(tag?: string): string {
+    const n = normalize(tag || "");
+    if (n.includes("science")) return site.categories.beaute;
+    if (n.includes("nouveau") || n.includes("commerce") || n.includes("lieu")) return site.categories.commercesEtLieux;
+    if (n.includes("experience") || n.includes("lieu")) return site.categories.experience;
+    if (n.includes("beaute")) return site.categories.beaute;
+    return site.categories.beaute;
+  }
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    postsIndex.forEach((p) => (p.tags ?? []).forEach((t) => set.add(labelForTag(t))));
+    // Ensure preferred order
+    const list = [site.categories.beaute, site.categories.commercesEtLieux, site.categories.experience];
+    const extras = Array.from(set).filter((c) => !list.includes(c));
+    return ["Tous", ...list, ...extras];
+  }, []);
 
   const [activeCategory, setActiveCategory] = useState("Tous");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const allArticles = [
-    {
-      title: "Acide hyaluronique : mythes vs données scientifiques",
-      excerpt: "Décryptage scientifique de cet ingrédient star de la cosmétique. Entre promesses marketing et réalité clinique.",
-      image: beautyHero,
-      category: "Beauté",
-      readTime: "8 min",
-      slug: "acide-hyaluronique-mythes-vs-donnees"
-    },
-    {
-      title: "5 ouvertures à ne pas manquer ce mois-ci",
-      excerpt: "Découvrez les nouveaux commerces qui réinventent l'expérience shopping dans votre ville.",
-      image: boutiqueExterior,
-      category: "Nouveaux commerces",
-      readTime: "6 min",
-      slug: "5-ouvertures-ne-pas-manquer"
-    },
-    {
-      title: "Une journée dans un café céramique : récit & conseils",
-      excerpt: "Immersion dans un lieu hybride où se mêlent café de spécialité et atelier de céramique.",
-      image: cafeInterior,
-      category: "Expériences & Lieux",
-      readTime: "10 min",
-      slug: "journee-cafe-ceramique"
-    },
-    {
-      title: "Niacinamide 10% : quand est-ce pertinent ?",
-      excerpt: "Analyse approfondie de la niacinamide en concentration élevée avec études cliniques.",
-      image: skincareDetail,
-      category: "Science & Décryptage",
-      readTime: "7 min",
-      slug: "niacinamide-10-pertinence"
-    },
-    {
-      title: "SPF 50 au quotidien : mode d'emploi complet",
-      excerpt: "Tout ce qu'il faut savoir sur la protection solaire quotidienne.",
-      image: beautyHero,
-      category: "Beauté",
-      readTime: "9 min",
-      slug: "spf-50-quotidien-mode-emploi"
-    },
-    {
-      title: "Inside [Nom du salon] : tendances 2025",
-      excerpt: "Reportage exclusif depuis le plus grand salon professionnel de la beauté.",
-      image: skincareDetail,
-      category: "Événements",
-      readTime: "12 min",
-      slug: "inside-salon-tendances-2025"
-    }
-  ];
+  const allArticles = useMemo(
+    () =>
+      postsIndex.map((p) => ({
+        title: p.title,
+        excerpt: p.summary,
+        image: p.heroImage ?? "/placeholder.svg",
+        category: labelForTag(p.tags && p.tags.length > 0 ? p.tags[0] : undefined),
+        readTime: "5 min",
+        slug: p.slug,
+      })),
+    []
+  );
 
   const filteredArticles = allArticles
     .filter(article => activeCategory === "Tous" || article.category === activeCategory)

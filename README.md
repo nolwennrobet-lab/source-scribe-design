@@ -1,73 +1,82 @@
-# Welcome to your Lovable project
+# A` la Brestoise — CMS Markdown + Publication via Vercel
 
-## Project info
+Ce dépôt contient le site Vite + React. Un flux de publication simple a été ajouté : écriture d’un article dans une page admin (/admin/new), puis publication via une fonction serverless sur Vercel qui commit dans GitHub. Le site se redéploie et indexe automatiquement l’article.
 
-**URL**: https://lovable.dev/projects/749aee60-2f35-4aab-b773-c5eccc7e88d1
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/749aee60-2f35-4aab-b773-c5eccc7e88d1) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## 1) Lancer en local
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
 npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 2) Connexion Vercel (déploiement auto)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Crée un compte Vercel → Add New Project → Importer ce repo GitHub
+2. Dans Project → Settings → Environment Variables, ajoute :
+   - `GITHUB_TOKEN` (scope dépôt)
+   - `GITHUB_OWNER` (ton user/org GitHub)
+   - `GITHUB_REPO` (nom du dépôt)
+   - `GITHUB_BRANCH` = `main`
+   - `ADMIN_PASSWORD` (mot de passe fort)
+   - `VERCEL_DEPLOY_HOOK_URL` (optionnel, pour redéploiement immédiat)
 
-**Use GitHub Codespaces**
+Tu peux te baser sur le fichier `env.example` pour la liste des variables.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 3) SEO et génération du sitemap
 
-## What technologies are used for this project?
+- Le build génère `public/sitemap.xml` via `scripts/generate-sitemap.mjs` en scannant `content/posts/*.md`
+- `public/robots.txt` pointe vers `https://YOUR-DOMAIN.example/sitemap.xml`
+- Pense à remplacer le domaine dans `index.html` (lien canonical) et dans le sitemap (remplace l’URL dans le script si besoin).
 
-This project is built with:
+Scripts NPM :
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```json
+{
+  "dev": "vite",
+  "build": "vite build && node scripts/generate-sitemap.mjs",
+  "preview": "vite preview"
+}
+```
 
-## How can I deploy this project?
+## 4) Modèle de contenu
 
-Simply open [Lovable](https://lovable.dev/projects/749aee60-2f35-4aab-b773-c5eccc7e88d1) and click on Share -> Publish.
+- Les articles sont des fichiers Markdown dans `content/posts/` avec frontmatter YAML :
 
-## Can I connect a custom domain to my Lovable project?
+```yaml
+---
+title: "TITRE FR"
+slug: "slug-fr"
+date: "2025-11-04"
+summary: "Résumé court en français (≤ 160 caractères)."
+tags: ["beaute", "soin", "peau"]
+heroImage: "/images/2025/11/hero.jpg"
+---
 
-Yes, you can!
+Corps en Markdown (FR)
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 5) Publier un article (no‑code)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+1. Va sur `/admin/new`
+2. Remplis : Titre, Résumé, Tags, Corps (Markdown), Date (optionnelle), Image (optionnelle), Mot de passe admin
+3. Clique « Publier »
+4. La fonction `/api/publish` :
+   - Vérifie `ADMIN_PASSWORD`
+   - Commit l’image (si fournie) sous `public/images/YYYY/MM/`
+   - Crée `content/posts/<slug>.md` (frontmatter + body)
+   - Déclenche un redeploy Vercel (si `VERCEL_DEPLOY_HOOK_URL` défini)
+5. Après déploiement, l’article est dispo sous `/articles` et `/articles/<slug>`
+
+Astuce : l’upload envoie l’image en base64 (JSON) pour éviter le multipart côté fonction.
+
+## 6) Branding & langue
+
+- Nom : A`la Brestoise (remplace partout les mentions de « Nom du site »)
+- Baseline : « Articles élégants, fiables et faciles à lire. »
+- `<html lang="fr">`, `<title>`, `<meta description>`, canonical dans `index.html`
+
+## 7) Acceptation
+
+- Aucune régression de style/maquette
+- `/admin/new` publie et déclenche l’apparition de l’article après déploiement
+- `robots.txt` et `sitemap.xml` présents avec domaine placeholder

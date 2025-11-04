@@ -30,16 +30,17 @@ const About = () => {
             </div>
 
             <div className="space-y-6">
-              <div className="space-y-4">
-                <h2 className="text-2xl font-display font-semibold text-foreground">
-                  Bonjour, je suis [Votre prénom]
-                </h2>
-                <p className="text-muted-foreground leading-relaxed">
-                  Rédactrice spécialisée en contenus beauté et e-mailings, je partage sur ce blog 
-                  mes analyses rigoureuses des produits cosmétiques, mes découvertes de nouveaux 
-                  lieux et mes retours d'événements locaux.
-                </p>
-              </div>
+            <div className="space-y-4">
+              <h2 className="text-2xl font-display font-semibold text-foreground">
+                Je suis Nolwenn, brestoise 100% beurre salé et rédactrice spécialisée en contenus pour l’événementiel, les différents lieux et commerces et l’univers de la beauté.
+              </h2>
+              <p className="text-muted-foreground leading-relaxed">
+                Passionnée par la valorisation des expériences et des savoir-faire, j’aide les entreprises locales à mettre en lumière leur univers à travers des textes justes, vivants et modernes.
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                Cela me tient à cœur de partager mon univers, ici à Brest, « À la Brestoise ».
+              </p>
+            </div>
 
               <div className="space-y-4">
                 <h3 className="text-xl font-display font-semibold text-foreground">
@@ -57,10 +58,6 @@ const About = () => {
                   Mes valeurs
                 </h3>
                 <ul className="space-y-2 text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-1">•</span>
-                    <span>Rigueur scientifique dans l'analyse des ingrédients</span>
-                  </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary mt-1">•</span>
                     <span>Clarté et accessibilité de l'information</span>
