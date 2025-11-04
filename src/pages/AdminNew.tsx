@@ -64,6 +64,7 @@ const AdminNew = () => {
   const [adminPassword, setAdminPassword] = useState("");
   const [errors, setErrors] = useState<{ title?: string; category?: string; slug?: string; body?: string; date?: string; cover?: string; password?: string; readingMinutes?: string }>({});
   const [serverError, setServerError] = useState<{ message?: string; details?: string; missingEnv?: string[] }>({});
+  const [publishInfo, setPublishInfo] = useState<{ url: string; commit?: { sha: string; url?: string }; files?: { article?: string; index?: string }; deploy?: { triggered: boolean; error?: string } } | null>(null);
   const [debugOpen, setDebugOpen] = useState(false);
   const [lastRequest, setLastRequest] = useState<any>(null);
   const [lastResponse, setLastResponse] = useState<any>(null);
@@ -262,8 +263,11 @@ const AdminNew = () => {
         if (import.meta.env.DEV) console.error(json);
       } else if (json?.ok) {
         localStorage.removeItem(DRAFT_KEY);
-        toast.success("Article publié — redirection…");
-        navigate(json.url || `/articles/${article.slug}`);
+        setPublishInfo({ url: json.url, commit: json.commit, files: json.files, deploy: json.deploy });
+        const commitMsg = json?.commit?.url ? ` — commit ${json.commit.sha.slice(0,7)}` : "";
+        toast.success(`Article publié — déploiement en cours${commitMsg}`);
+        // Auto-redirect after ~75s so the new content is available post-deploy
+        window.setTimeout(() => navigate(json.url || `/articles/${article.slug}`), 75000);
         return;
       } else {
         // Graceful failure path (e.g., missing env)
@@ -649,6 +653,22 @@ const AdminNew = () => {
                       {submitting ? "Publication…" : "Publier"}
                     </Button>
                   </div>
+
+                  {publishInfo && (
+                    <div className="mt-3 text-sm">
+                      <p className="text-foreground">Article publié — déploiement en cours… {publishInfo.commit?.sha && (
+                        <a href={publishInfo.commit?.url} target="_blank" rel="noreferrer" className="underline">commit {publishInfo.commit.sha.slice(0,7)}</a>
+                      )}</p>
+                      {publishInfo.deploy && (
+                        <p className="text-muted-foreground text-xs mt-1">
+                          {publishInfo.deploy.triggered ? "Déploiement Vercel déclenché." : `Déploiement non déclenché${publishInfo.deploy.error ? ` — ${publishInfo.deploy.error}` : ''}.`}
+                        </p>
+                      )}
+                      <p className="text-muted-foreground text-xs mt-1">
+                        Le nouvel article apparaîtra après la mise en ligne. <a className="underline" href={publishInfo.url} target="_blank" rel="noreferrer">Voir l’article</a>
+                      </p>
+                    </div>
+                  )}
 
                   {serverError.message && (
                     <Alert variant="destructive" className="mt-4" aria-live="polite">
