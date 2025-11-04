@@ -7,6 +7,8 @@ export type PostFrontmatter = {
   summary: string;
   tags?: string[];
   heroImage?: string;
+  category?: string;
+  readingMinutes?: number;
 };
 
 export type Post = PostFrontmatter & {
@@ -89,6 +91,17 @@ function stripQuotes(s: string): string {
   return s.replace(/^"/, "").replace(/"$/, "").replace(/^'/, "").replace(/'$/, "");
 }
 
+// Simple reading time estimator (French ~200 wpm)
+export function estimateMinutes(text: string, wpm = 200) {
+  const words = text
+    .replace(/[`*_#>!\[\]\(\)`~\-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean).length;
+  return Math.max(1, Math.round(words / wpm));
+}
+
 function coerceFrontmatter(data: Record<string, unknown>, fallbackSlug: string): PostFrontmatter {
   const fm: PostFrontmatter = {
     title: String(data.title ?? ""),
@@ -105,7 +118,8 @@ const posts: Post[] = rawPosts.map((rp) => {
   const { data, content } = parseFrontmatter(rp.source);
   const fallbackSlug = rp.path.split("/").pop()!.replace(/\.md$/, "");
   const fm = coerceFrontmatter(data, fallbackSlug);
-  return { ...fm, body: content };
+  const readingMinutes = estimateMinutes(`${fm.summary}\n\n${content}`);
+  return { ...fm, body: content, readingMinutes };
 });
 
 // New JSON-based articles (published via /api/publish)
@@ -119,6 +133,7 @@ export type JsonArticle = {
   body: string; // markdown
   author: string;
   date: string; // ISO
+  readingMinutes?: number;
 };
 
 // Load any JSON articles if present. When none exist, the globs will be empty.
@@ -135,6 +150,8 @@ const jsonArticlesIndex: PostFrontmatter[] = jsonArticles.map((a) => ({
   summary: a.excerpt,
   tags: a.tags,
   heroImage: a.cover || undefined,
+  category: a.category,
+  readingMinutes: a.readingMinutes && a.readingMinutes > 0 ? a.readingMinutes : estimateMinutes(`${a.excerpt}\n\n${a.body}`),
 }));
 
 export const postsIndex: PostFrontmatter[] = [...posts.map(({ body, ...fm }) => fm), ...jsonArticlesIndex]
@@ -152,6 +169,8 @@ export function getPostBySlug(slug: string): Post | undefined {
     summary: ja.excerpt,
     tags: ja.tags,
     heroImage: ja.cover || undefined,
+    category: ja.category,
+    readingMinutes: ja.readingMinutes && ja.readingMinutes > 0 ? ja.readingMinutes : estimateMinutes(`${ja.excerpt}\n\n${ja.body}`),
     body: ja.body,
   };
   return mapped;

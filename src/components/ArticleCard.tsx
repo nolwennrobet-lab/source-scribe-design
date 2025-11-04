@@ -9,9 +9,10 @@ interface ArticleCardProps {
   category: string;
   readTime: string;
   slug: string;
+  tags?: string[];
 }
 
-const ArticleCard = ({ title, excerpt, image, category, readTime, slug }: ArticleCardProps) => {
+const ArticleCard = ({ title, excerpt, image, category, readTime, slug, tags }: ArticleCardProps) => {
   return (
     <Link to={`/articles/${slug}`} className="group">
       <article className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
@@ -43,6 +44,13 @@ const ArticleCard = ({ title, excerpt, image, category, readTime, slug }: Articl
           <p className="text-muted-foreground line-clamp-3 leading-relaxed">
             {excerpt}
           </p>
+          {tags && tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {tags.map((t) => (
+                <span key={t} className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs">{t}</span>
+              ))}
+            </div>
+          )}
         </div>
       </article>
     </Link>
