@@ -6,15 +6,16 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { site } from "@/lib/siteContent";
 
 const Navigation = () => {
   const navLinks = [
-    { label: "Accueil", path: "/" },
-    { label: "Articles", path: "/articles" },
-    { label: "Thématiques", path: "/thematiques" },
-    { label: "À propos", path: "/a-propos" },
-    { label: "Services", path: "/services" },
-    { label: "Contact", path: "/contact" },
+    { label: site.nav.accueil, path: "/" },
+    { label: site.nav.articles, path: "/articles" },
+    { label: site.nav.thematiques, path: "/thematiques" },
+    { label: site.nav.aPropos, path: "/a-propos" },
+    { label: site.nav.services, path: "/services" },
+    { label: site.nav.contact, path: "/contact" },
   ];
 
   return (
@@ -24,7 +25,7 @@ const Navigation = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center">
             <h1 className="text-2xl font-display font-semibold text-foreground tracking-tight">
-              [Nom du site]
+              {site.name}
             </h1>
           </Link>
 

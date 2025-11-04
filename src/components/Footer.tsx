@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { Facebook, Instagram, Linkedin, Mail } from "lucide-react";
+import { Linkedin, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { site } from "@/lib/siteContent";
 
 const Footer = () => {
   return (
@@ -11,10 +12,10 @@ const Footer = () => {
           {/* About */}
           <div className="space-y-4">
             <h3 className="text-xl font-display font-semibold text-foreground">
-              [Nom du site]
+              {site.name}
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Articles clairs, sourcés et élégants sur la beauté, les lieux et les événements.
+              À la Brestoise — Des articles à la brestoise : Événements, lieux et beauté
             </p>
           </div>
 
@@ -41,14 +42,14 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="font-semibold text-foreground">Légal</h4>
             <nav className="flex flex-col gap-2">
-              <Link to="/mentions-legales" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link to={site.footer.legal.mentions} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Mentions légales
               </Link>
-              <Link to="/confidentialite" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link to={site.footer.legal.privacy} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Politique de confidentialité
               </Link>
-              <Link to="/rss" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Flux RSS
+              <Link to={site.footer.legal.terms} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Conditions d’utilisation
               </Link>
             </nav>
           </div>
@@ -75,19 +76,16 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © 2025 [Nom du site]. Tous droits réservés.
+            © 2025 {site.name}. Tous droits réservés.
           </p>
           
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent">
-              <Instagram className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent">
-              <Facebook className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent">
+            <a href={site.footer.social.linkedin} target="_blank" rel="noreferrer" className="rounded-full hover:bg-accent p-2 transition duration-200">
               <Linkedin className="h-5 w-5" />
-            </Button>
+            </a>
+            <a href={site.footer.social.tiktok} target="_blank" rel="noreferrer" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              TikTok
+            </a>
           </div>
         </div>
       </div>

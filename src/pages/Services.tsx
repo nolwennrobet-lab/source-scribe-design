@@ -3,6 +3,16 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Camera, Sparkles, Mail } from "lucide-react";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const Services = () => {
   const services = [
@@ -97,34 +107,36 @@ const Services = () => {
                       </li>
                     ))}
                   </ul>
+                  <div className="mt-6">
+                    <Accordion type="single" collapsible>
+                      <AccordionItem value="processus">
+                        <AccordionTrigger>En savoir plus</AccordionTrigger>
+                        <AccordionContent>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            Premiers contacts → devis & rencontre → mail de récapitulatif → storytelling → date à fixer.
+                          </p>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
                 </CardContent>
                 <CardFooter className="flex justify-between items-center">
                   <span className="text-lg font-semibold text-primary">{service.price}</span>
-                  <Button variant="outline" className="rounded-full">
-                    En savoir plus
+                  <Button variant="outline" className="rounded-full transition duration-200 hover:opacity-90">
+                    Intéressé·e
                   </Button>
                 </CardFooter>
               </Card>
             ))}
           </div>
 
-          {/* CTA Section */}
-          <div className="bg-accent/30 rounded-3xl p-12 text-center space-y-6">
-            <h2 className="text-3xl font-display font-bold text-foreground">
-              Un projet en tête ?
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Discutons ensemble de vos besoins. Chaque prestation est personnalisable 
-              selon vos objectifs et votre budget.
+          {/* CTA + Contact Form */}
+          <div className="bg-accent/30 rounded-3xl p-8 md:p-12 space-y-6">
+            <h2 className="text-3xl font-display font-bold text-foreground text-center">Un projet en tête ? Demander un devis</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-center">
+              Discutons ensemble de vos besoins. Chaque prestation est personnalisable selon vos objectifs et votre budget.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="rounded-full px-8 bg-primary hover:bg-primary/90">
-                Demander un devis
-              </Button>
-              <Button size="lg" variant="outline" className="rounded-full px-8">
-                Télécharger le media kit
-              </Button>
-            </div>
+            <ContactForm />
           </div>
 
           {/* Testimonials */}
@@ -146,6 +158,10 @@ const Services = () => {
                 </Card>
               ))}
             </div>
+
+            <div className="max-w-2xl mx-auto">
+              <TestimonialForm />
+            </div>
           </div>
         </div>
       </section>
@@ -156,3 +172,106 @@ const Services = () => {
 };
 
 export default Services;
+
+function ContactForm() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const emailValid = /\S+@\S+\.\S+/.test(email);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name || !emailValid || !message) {
+      toast({ title: "Veuillez remplir les champs requis" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, company, message }),
+      });
+      if (res.ok) {
+        toast({ title: "Merci !" });
+        setName("");
+        setEmail("");
+        setCompany("");
+        setMessage("");
+      } else {
+        const j = await res.json().catch(() => ({}));
+        toast({ title: j.error || "Erreur serveur" });
+      }
+    } catch (err) {
+      toast({ title: "Erreur réseau" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="grid md:grid-cols-2 gap-4">
+      <Input placeholder="Nom*" value={name} onChange={(e) => setName(e.target.value)} required className="rounded-full" />
+      <Input type="email" placeholder="Email*" value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-full" />
+      <Input placeholder="Entreprise (optionnel)" value={company} onChange={(e) => setCompany(e.target.value)} className="rounded-full md:col-span-2" />
+      <Textarea placeholder="Message*" value={message} onChange={(e) => setMessage(e.target.value)} required className="md:col-span-2" />
+      <div className="md:col-span-2 flex justify-end">
+        <Button type="submit" disabled={loading} className="rounded-full transition duration-200 hover:opacity-90">
+          {loading ? "Envoi..." : "Envoyer"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function TestimonialForm() {
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name || !text) {
+      toast({ title: "Nom et texte requis" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/testimonial", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, role, text }),
+      });
+      if (res.ok) {
+        toast({ title: "Merci pour votre témoignage !" });
+        setName("");
+        setRole("");
+        setText("");
+      } else {
+        const j = await res.json().catch(() => ({}));
+        toast({ title: j.error || "Erreur serveur" });
+      }
+    } catch (err) {
+      toast({ title: "Erreur réseau" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="bg-card border border-border rounded-2xl p-6 space-y-3">
+      <h3 className="text-xl font-display font-semibold text-foreground">Proposer un témoignage</h3>
+      <div className="grid md:grid-cols-2 gap-3">
+        <Input placeholder="Nom*" value={name} onChange={(e) => setName(e.target.value)} required className="rounded-full" />
+        <Input placeholder="Fonction (optionnel)" value={role} onChange={(e) => setRole(e.target.value)} className="rounded-full" />
+        <Textarea placeholder="Votre témoignage*" value={text} onChange={(e) => setText(e.target.value)} required className="md:col-span-2" />
+      </div>
+      <div className="flex justify-end">
+        <Button type="submit" disabled={loading} className="rounded-full transition duration-200 hover:opacity-90">Envoyer</Button>
+      </div>
+    </form>
+  );
+}

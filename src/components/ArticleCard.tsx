@@ -13,7 +13,7 @@ interface ArticleCardProps {
 
 const ArticleCard = ({ title, excerpt, image, category, readTime, slug }: ArticleCardProps) => {
   return (
-    <Link to={`/article/${slug}`} className="group">
+    <Link to={`/articles/${slug}`} className="group">
       <article className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
         {/* Image */}
         <div className="aspect-[16/10] overflow-hidden bg-muted">

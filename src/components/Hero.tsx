@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-portrait.jpeg";
+import { site } from "@/lib/siteContent";
+import { Link } from "react-router-dom";
 
 const Hero = () => {
   return (
@@ -9,30 +11,31 @@ const Hero = () => {
           {/* Text Content */}
           <div className="space-y-8">
             <div className="space-y-4">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-foreground leading-tight">
-                Des articles clairs, sourcés et élégants
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-foreground leading-tight tracking-tight">
+                {site.hero.title}
               </h1>
               <p className="text-xl text-muted-foreground leading-relaxed">
-                Beauté, lieux & événements
+                {site.tagline}
               </p>
             </div>
             
-            <p className="text-lg text-muted-foreground max-w-lg">
-              Explorez des contenus rigoureux sur la beauté, découvrez de nouveaux commerces 
-              et vivez les événements locaux à travers des articles soigneusement rédigés.
+            <p className="text-lg text-muted-foreground max-w-lg leading-relaxed">
+              {site.hero.subtitle}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
-                size="lg" 
-                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8"
-              >
-                Lire les articles
-              </Button>
+              <Link to={site.hero.ctaHref}>
+                <Button 
+                  size="lg" 
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 transition duration-200 hover:opacity-90"
+                >
+                  {site.hero.ctaLabel}
+                </Button>
+              </Link>
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="rounded-full px-8 border-2 hover:bg-rose hover:border-rose transition-colors"
+                className="rounded-full px-8 border-2 transition-colors duration-200 hover:opacity-90"
               >
                 Proposer un sujet
               </Button>
