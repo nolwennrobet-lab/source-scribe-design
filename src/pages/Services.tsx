@@ -70,6 +70,8 @@ const Services = () => {
     }
   ];
 
+  const [testimonials, setTestimonials] = useState<{ message: string; nom: string; fonction_entreprise?: string }[]>([]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -113,7 +115,7 @@ const Services = () => {
                         <AccordionTrigger>En savoir plus</AccordionTrigger>
                         <AccordionContent>
                           <p className="text-sm text-muted-foreground leading-relaxed">
-                            Premiers contacts → devis & rencontre → mail de récapitulatif → storytelling → date à fixer.
+                            Premiers contacts → devis et rencontre → mail de récap → utilisation de story-telling → date à fixer
                           </p>
                         </AccordionContent>
                       </AccordionItem>
@@ -132,7 +134,7 @@ const Services = () => {
 
           {/* CTA + Contact Form */}
           <div className="bg-accent/30 rounded-3xl p-8 md:p-12 space-y-6">
-            <h2 className="text-3xl font-display font-bold text-foreground text-center">Un projet en tête ? Demander un devis</h2>
+            <h2 className="text-3xl font-display font-bold text-foreground text-center">Un projet en tête ? Demander un devis :</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-center">
               Discutons ensemble de vos besoins. Chaque prestation est personnalisable selon vos objectifs et votre budget.
             </p>
@@ -144,23 +146,21 @@ const Services = () => {
             <h2 className="text-3xl font-display font-bold text-foreground text-center">
               Ils m'ont fait confiance
             </h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="bg-card rounded-2xl border-border">
-                  <CardContent className="pt-6">
-                    <p className="text-muted-foreground italic mb-4">
-                      "Un travail remarquable qui a parfaitement capturé l'essence 
-                      de notre espace. L'article a généré un bel afflux de visiteurs."
-                    </p>
-                    <p className="font-semibold text-foreground">— Nom, Fonction</p>
-                    <p className="text-sm text-muted-foreground">Entreprise</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {testimonials.length > 0 && (
+              <div className="grid md:grid-cols-3 gap-8">
+                {testimonials.map((t, i) => (
+                  <Card key={i} className="bg-card rounded-2xl border-border">
+                    <CardContent className="pt-6">
+                      <p className="text-muted-foreground italic mb-4">“{t.message}”</p>
+                      <p className="font-semibold text-foreground">— {t.nom}{t.fonction_entreprise ? `, ${t.fonction_entreprise}` : ""}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
 
             <div className="max-w-2xl mx-auto">
-              <TestimonialForm />
+              <TestimonialForm onAdd={(t) => setTestimonials((prev) => [t, ...prev])} />
             </div>
           </div>
         </div>
@@ -214,8 +214,8 @@ function ContactForm() {
   return (
     <form onSubmit={onSubmit} className="grid md:grid-cols-2 gap-4">
       <Input placeholder="Nom*" value={name} onChange={(e) => setName(e.target.value)} required className="rounded-full" />
-      <Input type="email" placeholder="Email*" value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-full" />
-      <Input placeholder="Entreprise (optionnel)" value={company} onChange={(e) => setCompany(e.target.value)} className="rounded-full md:col-span-2" />
+      <Input type="email" placeholder="E-mail*" value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-full" />
+      <Input placeholder="Société (optionnel)" value={company} onChange={(e) => setCompany(e.target.value)} className="rounded-full md:col-span-2" />
       <Textarea placeholder="Message*" value={message} onChange={(e) => setMessage(e.target.value)} required className="md:col-span-2" />
       <div className="md:col-span-2 flex justify-end">
         <Button type="submit" disabled={loading} className="rounded-full transition duration-200 hover:opacity-90">
@@ -226,15 +226,15 @@ function ContactForm() {
   );
 }
 
-function TestimonialForm() {
-  const [name, setName] = useState("");
-  const [role, setRole] = useState("");
-  const [text, setText] = useState("");
+function TestimonialForm({ onAdd }: { onAdd: (t: { message: string; nom: string; fonction_entreprise?: string }) => void }) {
+  const [nom, setNom] = useState("");
+  const [fonction, setFonction] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name || !text) {
+    if (!nom || !message) {
       toast({ title: "Nom et texte requis" });
       return;
     }
@@ -243,13 +243,14 @@ function TestimonialForm() {
       const res = await fetch("/api/testimonial", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, role, text }),
+        body: JSON.stringify({ name: nom, role: fonction, text: message }),
       });
       if (res.ok) {
         toast({ title: "Merci pour votre témoignage !" });
-        setName("");
-        setRole("");
-        setText("");
+        onAdd({ message, nom, fonction_entreprise: fonction || undefined });
+        setNom("");
+        setFonction("");
+        setMessage("");
       } else {
         const j = await res.json().catch(() => ({}));
         toast({ title: j.error || "Erreur serveur" });
@@ -265,9 +266,9 @@ function TestimonialForm() {
     <form onSubmit={onSubmit} className="bg-card border border-border rounded-2xl p-6 space-y-3">
       <h3 className="text-xl font-display font-semibold text-foreground">Proposer un témoignage</h3>
       <div className="grid md:grid-cols-2 gap-3">
-        <Input placeholder="Nom*" value={name} onChange={(e) => setName(e.target.value)} required className="rounded-full" />
-        <Input placeholder="Fonction (optionnel)" value={role} onChange={(e) => setRole(e.target.value)} className="rounded-full" />
-        <Textarea placeholder="Votre témoignage*" value={text} onChange={(e) => setText(e.target.value)} required className="md:col-span-2" />
+        <Input placeholder="Nom*" value={nom} onChange={(e) => setNom(e.target.value)} required className="rounded-full" />
+        <Input placeholder="Fonction (optionnel)" value={fonction} onChange={(e) => setFonction(e.target.value)} className="rounded-full" />
+        <Textarea placeholder="Votre témoignage*" value={message} onChange={(e) => setMessage(e.target.value)} required className="md:col-span-2" />
       </div>
       <div className="flex justify-end">
         <Button type="submit" disabled={loading} className="rounded-full transition duration-200 hover:opacity-90">Envoyer</Button>

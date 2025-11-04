@@ -122,11 +122,11 @@ const Index = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Votre email"
+                placeholder="Votre e-mail"
                 className="rounded-full"
               />
               <Button type="submit" className="rounded-full transition duration-200 hover:opacity-90">
-                S'inscrire
+                S’abonner
               </Button>
             </div>
           </form>

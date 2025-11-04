@@ -6,17 +6,10 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { site } from "@/lib/siteContent";
+import { site, NAV_CATEGORIES, HIDDEN_CATEGORY_LABELS } from "@/lib/siteContent";
 
 const Navigation = () => {
-  const navLinks = [
-    { label: site.nav.accueil, path: "/" },
-    { label: site.nav.articles, path: "/articles" },
-    { label: site.nav.thematiques, path: "/thematiques" },
-    { label: site.nav.aPropos, path: "/a-propos" },
-    { label: site.nav.services, path: "/services" },
-    { label: site.nav.contact, path: "/contact" },
-  ];
+  const navLinks = NAV_CATEGORIES.filter((c) => !HIDDEN_CATEGORY_LABELS.includes(c.label));
 
   return (
     <nav className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -33,8 +26,8 @@ const Navigation = () => {
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
-                key={link.path}
-                to={link.path}
+                key={link.href}
+                to={link.href}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {link.label}
@@ -56,8 +49,8 @@ const Navigation = () => {
               <nav className="flex flex-col gap-4 mt-8">
                 {navLinks.map((link) => (
                   <Link
-                    key={link.path}
-                    to={link.path}
+                    key={link.href}
+                    to={link.href}
                     className="text-lg font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
                   >
                     {link.label}
