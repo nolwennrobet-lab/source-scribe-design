@@ -1,8 +1,8 @@
 export const site = {
   name: "À la Brestoise",
-  tagline: "Des articles à la brestoise : Événements, lieux et beauté",
+  tagline: "Des articles à la Brestoise : Événements, Lieux et Bien-être",
   hero: {
-    title: "Des articles à la brestoise : Événements, lieux et beauté",
+    title: "Des articles à la Brestoise : Événements, Lieux et Bien-être",
     subtitle:
       "Explorez des contenus clairs, vivants — rédigés et sourcés.",
     ctaLabel: "Lire les articles",
