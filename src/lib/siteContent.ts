@@ -1,10 +1,10 @@
 export const site = {
   name: "À la Brestoise",
-  tagline: "Des articles à la brestoise : Événements, lieux et beauté",
+  tagline: "Des articles à la Brestoise : Événements, Lieux et Bien-être",
   hero: {
-    title: "Articles élégants, fiables et faciles à lire.",
+    title: "Des articles à la Brestoise : Événements, Lieux et Bien-être",
     subtitle:
-      "Explorez des contenus clairs, vivants et sourcés — rédigés avec soin.",
+      "Explorez des contenus clairs, vivants, rédigés et sourcés.",
     ctaLabel: "Lire les articles",
     ctaHref: "/articles",
   },
@@ -22,7 +22,11 @@ export const site = {
     beaute: "Beauté",
   },
   footer: {
-    social: { linkedin: "#", tiktok: "#" },
+    social: {
+      linkedin: "https://www.linkedin.com/in/nolwennrobet",
+      whatsapp: "https://wa.me/33658297220",
+      tiktok: "https://www.tiktok.com/@nollaframboise?_r=1&_t=ZN-917nFjtOgH0",
+    },
     legal: {
       mentions: "/mentions-legales",
       privacy: "/politique-de-confidentialite",
@@ -31,4 +35,12 @@ export const site = {
   },
 } as const;
 
+export const NAV_CATEGORIES = [
+  { href: "/articles?category=Commerces%20%26%20lieux", label: "Commerces & lieux" },
+  { href: "/articles?category=Expérience", label: "Expérience" },
+  { href: "/articles?category=Beauté", label: "Beauté" },
+] as const;
 
+export const HIDDEN_CATEGORY_LABELS = [
+  "Sciences et décryptage",
+] as const;

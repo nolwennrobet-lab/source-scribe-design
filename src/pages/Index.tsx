@@ -1,5 +1,4 @@
 import { FormEvent, useState } from "react";
-import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import ArticleCard from "@/components/ArticleCard";
 import CategoryFilter from "@/components/CategoryFilter";
@@ -106,7 +105,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
       <Hero />
 
       {/* Newsletter Bar */}
@@ -122,11 +120,11 @@ const Index = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Votre email"
+                placeholder="Votre e-mail"
                 className="rounded-full"
               />
               <Button type="submit" className="rounded-full transition duration-200 hover:opacity-90">
-                S'inscrire
+                S’abonner
               </Button>
             </div>
           </form>
@@ -162,12 +160,12 @@ const Index = () => {
       {/* CTA Section */}
       <section className="py-20 bg-accent/30">
         <div className="container mx-auto px-4 text-center space-y-6">
-          <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground">
-            Recevez les nouveaux articles
-          </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Inscrivez-vous à la newsletter pour ne rien manquer des prochaines publications
           </p>
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground">
+            Recevez les nouveaux articles
+          </h2>
         </div>
       </section>
 

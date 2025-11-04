@@ -31,14 +31,9 @@ const About = () => {
 
             <div className="space-y-6">
             <div className="space-y-4">
-              <h2 className="text-2xl font-display font-semibold text-foreground">
-                Je suis Nolwenn, brestoise 100% beurre salé et rédactrice spécialisée en contenus pour l’événementiel, les différents lieux et commerces et l’univers de la beauté.
-              </h2>
               <p className="text-muted-foreground leading-relaxed">
-                Passionnée par la valorisation des expériences et des savoir-faire, j’aide les entreprises locales à mettre en lumière leur univers à travers des textes justes, vivants et modernes.
-              </p>
-              <p className="text-muted-foreground leading-relaxed">
-                Cela me tient à cœur de partager mon univers, ici à Brest, « À la Brestoise ».
+Je suis Nolwenn, brestoise 100% beurre salé et rédactrice spécialisée en contenus pour l’événementiel, les différents lieux et commerces et l’univers de la beauté.
+Passionnée par la valorisation des expériences et des savoir-faire, j’aide les entreprises locales à mettre en lumière leur univers à travers des textes justes, vivants et modernes. Cela me tient à cœur de partager mon univers, ici à Brest, « À la Brestoise ».
               </p>
             </div>
 
@@ -83,23 +78,23 @@ const About = () => {
 
             <div className="grid md:grid-cols-3 gap-8">
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-foreground">Beauté & Cosmétique</h3>
+                <h3 className="text-lg font-semibold text-foreground">Beauté & cosmétique</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Tests produits, décryptage d'ingrédients, analyses scientifiques, guides d'achat
+                  Tests produits, décryptage d’ingrédients, analyse scientifiques sourcés, guide d’achat le tout en un article ludique et 100% transparent !
                 </p>
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-foreground">Commerces & Lieux</h3>
+                <h3 className="text-lg font-semibold text-foreground">Commerces & lieux</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Ouvertures de boutiques, concept-stores, cafés et ateliers créatifs
+                  Domaines hôteliers, boutiques & concept-stores, cafés et restaurants, ateliers créatifs, activités
                 </p>
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-foreground">Événements</h3>
+                <h3 className="text-lg font-semibold text-foreground">Événementiel</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Salons professionnels, lancements de marques, initiatives territoriales
+                  Salons professionnels, lieux de réception, événements culturel, sportif, musical
                 </p>
               </div>
             </div>
