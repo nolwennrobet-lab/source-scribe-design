@@ -8,35 +8,46 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 32 29% 97%;
+    --foreground: 25 14% 12%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 33 33% 94%;
+    --card-foreground: 25 14% 12%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 32 29% 97%;
+    --popover-foreground: 25 14% 12%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 27 15% 39%;
+    --primary-foreground: 32 29% 97%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 36 22% 85%;
+    --secondary-foreground: 25 14% 12%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 45 20% 80%;
+    --muted-foreground: 27 10% 50%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 54 16% 77%;
+    --accent-foreground: 25 14% 12%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 32 29% 97%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 36 22% 88%;
+    --input: 36 22% 88%;
+    --ring: 27 15% 39%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
+    
+    --cream: 32 29% 97%;
+    --beige: 33 33% 94%;
+    --sand: 36 22% 85%;
+    --sage: 54 16% 77%;
+    --brown: 27 15% 39%;
+    --soft-black: 25 14% 12%;
+    --rose: 0 33% 85%;
+    
+    --shadow-soft: 0 2px 12px -2px rgba(107, 99, 88, 0.08);
+    --transition-elegant: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
 
@@ -56,33 +67,33 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 25 14% 12%;
+    --foreground: 32 29% 97%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 27 15% 18%;
+    --card-foreground: 32 29% 97%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 25 14% 12%;
+    --popover-foreground: 32 29% 97%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 32 29% 97%;
+    --primary-foreground: 25 14% 12%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 27 15% 25%;
+    --secondary-foreground: 32 29% 97%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 27 15% 25%;
+    --muted-foreground: 36 10% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 54 16% 35%;
+    --accent-foreground: 32 29% 97%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 32 29% 97%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 27 15% 25%;
+    --input: 27 15% 25%;
+    --ring: 32 29% 85%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -100,6 +111,27 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body antialiased;
   }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+.arch-decoration {
+  position: relative;
+}
+
+.arch-decoration::before {
+  content: '';
+  position: absolute;
+  top: -2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 50px;
+  border: 1px solid hsl(var(--border));
+  border-bottom: none;
+  border-radius: 100px 100px 0 0;
 }
