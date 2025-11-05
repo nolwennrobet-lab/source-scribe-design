@@ -13,6 +13,7 @@ export type PostFrontmatter = {
 
 export type Post = PostFrontmatter & {
   body: string;
+  sources?: string[];
 };
 
 type RawPost = {
@@ -134,6 +135,7 @@ export type JsonArticle = {
   author: string;
   date: string; // ISO
   readingMinutes?: number;
+  sources?: string[];
 };
 
 // Load any JSON articles if present. When none exist, the globs will be empty.
@@ -172,6 +174,7 @@ export function getPostBySlug(slug: string): Post | undefined {
     category: ja.category,
     readingMinutes: ja.readingMinutes && ja.readingMinutes > 0 ? ja.readingMinutes : estimateMinutes(`${ja.excerpt}\n\n${ja.body}`),
     body: ja.body,
+    sources: Array.isArray(ja.sources) ? ja.sources : undefined,
   };
   return mapped;
 }

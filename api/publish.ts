@@ -11,6 +11,7 @@ type Article = {
   author: string;
   date: string; // ISO
   readingMinutes?: number;
+  sources?: string[];
 };
 
 function toBase64(content: string | Uint8Array) {
@@ -166,7 +167,7 @@ export default async function handler(req: any, res: any) {
     const readingMinutes = Number(article.readingMinutes) > 0
       ? Number(article.readingMinutes)
       : estimateMinutes(`${article.excerpt || ""}\n\n${article.body || ""}`);
-    const articleForWrite = { ...article, readingMinutes } as Article & { readingMinutes: number };
+    const articleForWrite = { ...article, readingMinutes, sources: Array.isArray(article.sources) ? article.sources : [] } as Article & { readingMinutes: number };
 
     // Write full article JSON
     const articlePath = `content/articles/${slug}.json`;

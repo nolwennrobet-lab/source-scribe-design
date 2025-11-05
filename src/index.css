@@ -119,6 +119,29 @@ All colors MUST be HSL.
   }
 }
 
+.prose figure.img-left,
+.prose figure.img-right {
+  display: flow-root;
+}
+.prose figure.img-left img {
+  float: left;
+  margin: 0.5rem 1rem 0.5rem 0;
+  max-width: 48%;
+}
+.prose figure.img-right img {
+  float: right;
+  margin: 0.5rem 0 0.5rem 1rem;
+  max-width: 48%;
+}
+.prose figure.img-full img {
+  width: 100%;
+}
+.prose figure figcaption {
+  font-size: .9rem;
+  color: rgb(115 115 115);
+  margin-top: .25rem;
+}
+
 .arch-decoration {
   position: relative;
 }
