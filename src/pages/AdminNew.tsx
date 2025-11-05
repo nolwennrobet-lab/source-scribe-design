@@ -9,7 +9,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import MarkdownPreview from "@/components/MarkdownPreview";
+import ArticleContent from "@/components/ArticleContent";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Clock } from "lucide-react";
 
@@ -75,6 +76,15 @@ const AdminNew = () => {
   const nextLocalIdRef = useRef<number>(1);
   const manualReadingOverrideRef = useRef(false);
   const [readingMinutes, setReadingMinutes] = useState<number>(() => estimateMinutes(`${excerpt}\n\n${body}`));
+  const [sourcesText, setSourcesText] = useState("");
+  const refCounter = useRef(1);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [imgAlt, setImgAlt] = useState("");
+  const [imgUrl, setImgUrl] = useState("");
+  const [imgAlign, setImgAlign] = useState<"left" | "right" | "full">("full");
+  const [imgFile, setImgFile] = useState<File | null>(null);
+  // Map of image src -> blob url for immediate preview
+  const [previewImageMap, setPreviewImageMap] = useState<Record<string, string>>({});
 
   // Undo history for body textarea
   type BodySnapshot = { body: string; selStart: number; selEnd: number; scrollTop: number };
@@ -194,6 +204,8 @@ const AdminNew = () => {
     readingMinutes,
   }), [title, slug, category, tags, cover, excerpt, body, author, date, readingMinutes]);
 
+  const sources = useMemo(() => sourcesText.split('\n').map((s) => s.trim()).filter(Boolean), [sourcesText]);
+
   async function handlePublish(e: React.FormEvent) {
     e.preventDefault();
     setServerError({});
@@ -237,12 +249,12 @@ const AdminNew = () => {
     }
     setSubmitting(true);
     try {
-      const reqPayload = { ...article };
+      const reqPayload = { ...article, sources };
       setLastRequest(reqPayload);
       const res = await fetch("/api/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminPassword}` },
-        body: JSON.stringify(article),
+        body: JSON.stringify(reqPayload),
       });
       const json = await res.json().catch(() => ({}));
       setLastResponse({ status: res.status, body: json });
@@ -337,6 +349,110 @@ const AdminNew = () => {
       const newSelEnd = selEnd + delta;
       return { next: nextText, selStart: newSelStart, selEnd: newSelEnd };
     });
+  }
+
+  function toggleBulletedList() {
+    transformSelection((text, selStart, selEnd) => {
+      const startLineStart = text.lastIndexOf("\n", selStart - 1) + 1;
+      const endIdx = selEnd > selStart ? selEnd : selStart;
+      const endLineEndIdx = (() => {
+        const n = text.indexOf("\n", endIdx);
+        return n === -1 ? text.length : n;
+      })();
+      const block = text.slice(startLineStart, endLineEndIdx);
+      // Unwrap fenced code if selection is entirely wrapped in a single fence block
+      const unfenced = block.replace(/^```[\s\S]*?```$/gm, (m) => m.replace(/```/g, ""));
+      const lines = (unfenced || block).split("\n");
+      let delta = 0;
+      const nextLines = lines.map((line) => {
+        if (/^\s*-\s+/.test(line)) {
+          const out = line.replace(/^\s*-\s+/, "");
+          delta += out.length - line.length;
+          return out;
+        }
+        const trimmed = line.trim();
+        const out = trimmed.length ? `- ${line.replace(/^\s*([*+-]\s+)?/, "")}` : line;
+        delta += out.length - line.length;
+        return out;
+      });
+      const nextBlock = nextLines.join("\n");
+      const nextText = text.slice(0, startLineStart) + nextBlock + text.slice(endLineEndIdx);
+      const newSelStart = selStart;
+      const newSelEnd = selEnd + delta;
+      return { next: nextText, selStart: newSelStart, selEnd: newSelEnd };
+    });
+  }
+
+  function insertAtCaret(snippet: string) {
+    const ta = bodyRef.current;
+    if (!ta) return;
+    pushBodySnapshot();
+    const a = ta.selectionStart ?? 0;
+    const b = ta.selectionEnd ?? a;
+    const next = body.slice(0, a) + snippet + body.slice(b);
+    setBody(next);
+    requestAnimationFrame(() => {
+      if (!bodyRef.current) return;
+      const pos = a + snippet.length;
+      bodyRef.current.focus();
+      bodyRef.current.setSelectionRange(pos, pos);
+    });
+  }
+
+  async function doUploadImage(slugArg: string, file: File): Promise<string> {
+    const content = await file.arrayBuffer().then((buf) => Buffer.from(buf).toString("base64"));
+    const payload = { slug: slugArg, fileName: file.name, content };
+    const res = await fetch("/api/upload-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminPassword}` },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json?.ok) throw new Error(json?.error || `Upload failed (${res.status})`);
+    return String(json.path);
+  }
+
+  function openImageDialog() {
+    setImgAlt("");
+    setImgUrl("");
+    setImgFile(null);
+    setImgAlign("full");
+    setImageDialogOpen(true);
+  }
+
+  async function confirmInsertImage() {
+    try {
+      let path = imgUrl.trim();
+      let tempBlobUrl: string | undefined;
+      if (!path && imgFile) {
+        // immediate local preview
+        tempBlobUrl = URL.createObjectURL(imgFile);
+        // upload in background, but await to insert canonical path
+        path = await doUploadImage(slug || slugify(title) || "article", imgFile);
+        // map canonical path to blob for local preview
+        setPreviewImageMap((m) => ({ ...m, [path!]: tempBlobUrl! }));
+      }
+      if (!path) {
+        toast.error("Fournissez une URL ou un fichier.");
+        return;
+      }
+      const cls = imgAlign === "left" ? "img-left" : imgAlign === "right" ? "img-right" : "img-full";
+      const alt = imgAlt || "";
+      const snippet = `<figure class="${cls}"><img src="${path}" alt="${alt}" /><figcaption>${alt}</figcaption></figure>`;
+      insertAtCaret(snippet);
+      setImageDialogOpen(false);
+    } catch (e: any) {
+      toast.error(String(e?.message || e));
+    }
+  }
+
+  function insertRefMark() {
+    const n = refCounter.current++;
+    insertAtCaret(`[^${n}]`);
+    if (!new RegExp(`^\\[\\^?${n}\\]`, "m").test(sourcesText)) {
+      const extra = window.prompt("Source text (optionnel)", "") || "";
+      setSourcesText((prev) => `${prev}${prev ? "\n" : ""}[${n}] ${extra}`);
+    }
   }
 
   function toggleWrap(wrapper: string, emptyInsertMiddle = false) {
@@ -588,11 +704,14 @@ const AdminNew = () => {
                       <Button type="button" variant="secondary" size="sm" aria-label="Titre H1" title="Titre H1 (Alt+1)" onClick={() => toggleHeading(1)}>H1</Button>
                       <Button type="button" variant="secondary" size="sm" aria-label="Titre H2" title="Titre H2 (Alt+2)" onClick={() => toggleHeading(2)}>H2</Button>
                       <Button type="button" variant="secondary" size="sm" aria-label="Titre H3" title="Titre H3 (Alt+3)" onClick={() => toggleHeading(3)}>H3</Button>
+                      <Button type="button" variant="secondary" size="sm" aria-label="Liste à puces" title="Liste à puces" onClick={() => toggleBulletedList()}>• List</Button>
                       <Button type="button" variant="secondary" size="sm" aria-label="Gras" title="Gras (Ctrl+B)" onClick={() => toggleWrap("**", true)}>B</Button>
                       <Button type="button" variant="secondary" size="sm" aria-label="Italique" title="Italique (Ctrl+I)" onClick={() => toggleWrap("*", true)}><span className="italic">I</span></Button>
                       <Button type="button" variant="secondary" size="sm" aria-label="Majuscules" title="Majuscules" onClick={toUppercase}>Aa↑</Button>
                       <Button type="button" variant="secondary" size="sm" aria-label="Minuscules" title="Minuscules" onClick={toLowercase}>Aa↓</Button>
                       <Button type="button" variant="secondary" size="sm" aria-label="Casse Titre" title="Casse Titre" onClick={toTitleCase}>Aa Title</Button>
+                      <Button type="button" variant="secondary" size="sm" onClick={openImageDialog}>Insérer image</Button>
+                      <Button type="button" variant="secondary" size="sm" onClick={insertRefMark}>Ref</Button>
                     </div>
                     <Textarea
                       id="body"
@@ -618,6 +737,40 @@ const AdminNew = () => {
                     {errors.body && <p className="text-sm text-red-600 mt-1">{errors.body}</p>}
                   </div>
 
+                  <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Insérer une image</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-3 pt-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="imgAlt">Texte alternatif</Label>
+                          <Input id="imgAlt" value={imgAlt} onChange={(e) => setImgAlt(e.target.value)} placeholder="Description de l’image" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="imgUrl">URL de l’image</Label>
+                          <Input id="imgUrl" value={imgUrl} onChange={(e) => setImgUrl(e.target.value)} placeholder="https://…" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="imgFile">ou Téléverser un fichier</Label>
+                          <Input id="imgFile" type="file" accept="image/*" onChange={(e) => setImgFile(e.target.files?.[0] || null)} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Alignement</Label>
+                          <div className="flex gap-2">
+                            <Button type="button" variant={imgAlign === "left" ? "default" : "secondary"} size="sm" onClick={() => setImgAlign("left")}>Gauche</Button>
+                            <Button type="button" variant={imgAlign === "right" ? "default" : "secondary"} size="sm" onClick={() => setImgAlign("right")}>Droite</Button>
+                            <Button type="button" variant={imgAlign === "full" ? "default" : "secondary"} size="sm" onClick={() => setImgAlign("full")}>Pleine largeur</Button>
+                          </div>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button type="button" variant="secondary" onClick={() => setImageDialogOpen(false)}>Annuler</Button>
+                        <Button type="button" onClick={confirmInsertImage}>Insérer</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="author">Auteur</Label>
@@ -637,6 +790,11 @@ const AdminNew = () => {
                       />
                       {errors.date && <p className="text-sm text-red-600 mt-1">{errors.date}</p>}
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="sources">Sources (optionnel) — une par ligne</Label>
+                    <Textarea id="sources" rows={4} value={sourcesText} onChange={(e) => setSourcesText(e.target.value)} placeholder="[1] Source…\n[2] …" />
                   </div>
 
                   <div className="space-y-2">
@@ -726,13 +884,14 @@ const AdminNew = () => {
                         <img src={coverFileUrl || cover} alt="Couverture" className="w-full h-full object-cover" />
                       </div>
                     )}
-                    <MarkdownPreview
-                      markdown={body || ""}
+                    <ArticleContent
+                      body={body || ""}
+                      sources={sources}
                       localMap={useMemo(() => {
-                        const m: Record<string, string> = {};
+                        const m: Record<string, string> = { ...previewImageMap };
                         for (const a of localAssets) m[`local:${a.id}`] = a.url;
                         return m;
-                      }, [localAssets])}
+                      }, [localAssets, previewImageMap])}
                     />
                   </div>
                 </div>
