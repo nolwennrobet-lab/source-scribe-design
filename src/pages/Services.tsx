@@ -7,12 +7,9 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Services = () => {
   const services = [
@@ -109,36 +106,28 @@ const Services = () => {
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-6">
-                    <Accordion type="single" collapsible>
-                      <AccordionItem value="processus">
-                        <AccordionTrigger>En savoir plus</AccordionTrigger>
-                        <AccordionContent>
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            Premiers contacts → devis et rencontre → mail de récap → utilisation de story-telling → date à fixer
-                          </p>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  </div>
                 </CardContent>
                 <CardFooter className="flex justify-between items-center">
                   <span className="text-lg font-semibold text-primary">{service.price}</span>
-                  <Button variant="outline" className="rounded-full transition duration-200 hover:opacity-90">
-                    Intéressé·e
-                  </Button>
+                  <ServiceInterestDialog service={service.title} />
                 </CardFooter>
               </Card>
             ))}
           </div>
 
-          {/* CTA + Contact Form */}
+          {/* CTA + Mailto */}
           <div className="bg-accent/30 rounded-3xl p-8 md:p-12 space-y-6">
             <h2 className="text-3xl font-display font-bold text-foreground text-center">Un projet en tête ? Demander un devis :</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-center">
               Discutons ensemble de vos besoins. Chaque prestation est personnalisable selon vos objectifs et votre budget.
             </p>
-            <ContactForm />
+            <div className="flex justify-center">
+              <a
+                href={`mailto:nolwennalabrestoise@gmail.com?subject=${encodeURIComponent("Demande de devis")}`}
+              >
+                <Button className="rounded-full transition duration-200 hover:opacity-90">Envoyer un email</Button>
+              </a>
+            </div>
           </div>
 
           {/* Testimonials */}
@@ -160,7 +149,7 @@ const Services = () => {
             )}
 
             <div className="max-w-2xl mx-auto">
-              <TestimonialForm onAdd={(t) => setTestimonials((prev) => [t, ...prev])} />
+              <TestimonialDialog />
             </div>
           </div>
         </div>
@@ -173,106 +162,195 @@ const Services = () => {
 
 export default Services;
 
-function ContactForm() {
-  const [name, setName] = useState("");
+function ServiceInterestDialog({ service }: { service: string }) {
   const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const emailValid = /\S+@\S+\.\S+/.test(email);
+  const messageValid = message.trim().length > 0;
+  const idBase = service.toLowerCase().replace(/\s+/g, "-");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name || !emailValid || !message) {
+    setSubmitted(true);
+    if (!emailValid || !messageValid) {
       toast({ title: "Veuillez remplir les champs requis" });
       return;
     }
-    setLoading(true);
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, company, message }),
+        body: JSON.stringify({ type: "interesse-service", service, email, message }),
       });
       if (res.ok) {
         toast({ title: "Merci !" });
-        setName("");
         setEmail("");
-        setCompany("");
         setMessage("");
       } else {
-        const j = await res.json().catch(() => ({}));
-        toast({ title: j.error || "Erreur serveur" });
+        const href = `mailto:nolwennalabrestoise@gmail.com?subject=${encodeURIComponent(`Intéressé(e) par ${service}`)}&body=${encodeURIComponent(`Email: ${email}\nService: ${service}\n\nMessage:\n${message}`)}`;
+        window.location.href = href;
       }
-    } catch (err) {
-      toast({ title: "Erreur réseau" });
-    } finally {
-      setLoading(false);
+    } catch {
+      const href = `mailto:nolwennalabrestoise@gmail.com?subject=${encodeURIComponent(`Intéressé(e) par ${service}`)}&body=${encodeURIComponent(`Email: ${email}\nService: ${service}\n\nMessage:\n${message}`)}`;
+      window.location.href = href;
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid md:grid-cols-2 gap-4">
-      <Input placeholder="Nom*" value={name} onChange={(e) => setName(e.target.value)} required className="rounded-full" />
-      <Input type="email" placeholder="E-mail*" value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-full" />
-      <Input placeholder="Société (optionnel)" value={company} onChange={(e) => setCompany(e.target.value)} className="rounded-full md:col-span-2" />
-      <Textarea placeholder="Message*" value={message} onChange={(e) => setMessage(e.target.value)} required className="md:col-span-2" />
-      <div className="md:col-span-2 flex justify-end">
-        <Button type="submit" disabled={loading} className="rounded-full transition duration-200 hover:opacity-90">
-          {loading ? "Envoi..." : "Envoyer"}
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="rounded-full transition duration-200 hover:opacity-90">
+          Intéressé(e)
         </Button>
-      </div>
-    </form>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Intéressé(e) — {service}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor={`interest-email-${idBase}`}>Email</Label>
+            <Input
+              id={`interest-email-${idBase}`}
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              aria-invalid={submitted && !emailValid}
+              aria-describedby={`interest-email-${idBase}-error`}
+            />
+            {submitted && !emailValid && (
+              <p id={`interest-email-${idBase}-error`} className="text-sm text-red-600">Email invalide</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`interest-message-${idBase}`}>Message</Label>
+            <Textarea
+              id={`interest-message-${idBase}`}
+              required
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              aria-invalid={submitted && !messageValid}
+              aria-describedby={`interest-message-${idBase}-error`}
+            />
+            {submitted && !messageValid && (
+              <p id={`interest-message-${idBase}-error`} className="text-sm text-red-600">Message requis</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="submit" className="rounded-full">Envoyer</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-function TestimonialForm({ onAdd }: { onAdd: (t: { message: string; nom: string; fonction_entreprise?: string }) => void }) {
-  const [nom, setNom] = useState("");
-  const [fonction, setFonction] = useState("");
+function TestimonialDialog() {
+  const [name, setName] = useState("");
+  const [organisation, setOrganisation] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [consent, setConsent] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nom || !message) {
-      toast({ title: "Nom et texte requis" });
+    setSubmitted(true);
+    if (!name.trim() || !message.trim()) {
+      toast({ title: "Champs requis manquants" });
       return;
     }
-    setLoading(true);
     try {
       const res = await fetch("/api/testimonial", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nom, role: fonction, text: message }),
+        body: JSON.stringify({
+          name,
+          organisation,
+          logoUrl: logoUrl || undefined,
+          message,
+          consent,
+        }),
       });
       if (res.ok) {
         toast({ title: "Merci pour votre témoignage !" });
-        onAdd({ message, nom, fonction_entreprise: fonction || undefined });
-        setNom("");
-        setFonction("");
+        setName("");
+        setOrganisation("");
+        setLogoUrl("");
         setMessage("");
+        setConsent(false);
       } else {
-        const j = await res.json().catch(() => ({}));
-        toast({ title: j.error || "Erreur serveur" });
+        const href = `mailto:nolwennalabrestoise@gmail.com?subject=${encodeURIComponent("Témoignage")} &body=${encodeURIComponent(`Nom: ${name}\nOrganisation: ${organisation}\nLogo URL: ${logoUrl}\n\nMessage:\n${message}\n\nConsentement: ${consent ? "oui" : "non"}`)}`;
+        window.location.href = href;
       }
-    } catch (err) {
-      toast({ title: "Erreur réseau" });
-    } finally {
-      setLoading(false);
+    } catch {
+      const href = `mailto:nolwennalabrestoise@gmail.com?subject=${encodeURIComponent("Témoignage")}&body=${encodeURIComponent(`Nom: ${name}\nOrganisation: ${organisation}\nLogo URL: ${logoUrl}\n\nMessage:\n${message}\n\nConsentement: ${consent ? "oui" : "non"}`)}`;
+      window.location.href = href;
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="bg-card border border-border rounded-2xl p-6 space-y-3">
-      <h3 className="text-xl font-display font-semibold text-foreground">Proposer un témoignage</h3>
-      <div className="grid md:grid-cols-2 gap-3">
-        <Input placeholder="Nom*" value={nom} onChange={(e) => setNom(e.target.value)} required className="rounded-full" />
-        <Input placeholder="Fonction (optionnel)" value={fonction} onChange={(e) => setFonction(e.target.value)} className="rounded-full" />
-        <Textarea placeholder="Votre témoignage*" value={message} onChange={(e) => setMessage(e.target.value)} required className="md:col-span-2" />
-      </div>
-      <div className="flex justify-end">
-        <Button type="submit" disabled={loading} className="rounded-full transition duration-200 hover:opacity-90">Envoyer</Button>
-      </div>
-    </form>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="rounded-full transition duration-200 hover:opacity-90">Proposer un témoignage</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Proposer un témoignage</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="testi-name">Nom</Label>
+              <Input
+                id="testi-name"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                aria-invalid={submitted && !name.trim()}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="testi-org">Organisation</Label>
+              <Input
+                id="testi-org"
+                value={organisation}
+                onChange={(e) => setOrganisation(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="testi-logo">URL (logo)</Label>
+              <Input
+                id="testi-logo"
+                type="url"
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="testi-message">Message</Label>
+              <Textarea
+                id="testi-message"
+                required
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                aria-invalid={submitted && !message.trim()}
+              />
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <Checkbox id="testi-consent" checked={consent} onCheckedChange={(v) => setConsent(!!v)} />
+            <Label htmlFor="testi-consent" className="text-sm text-muted-foreground cursor-pointer">
+              autoriser la publication pour tous (visible)
+            </Label>
+          </div>
+          <DialogFooter>
+            <Button type="submit" className="rounded-full">Envoyer</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

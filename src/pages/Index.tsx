@@ -95,11 +95,15 @@ const Index = () => {
         toast({ title: "Merci !" });
         setEmail("");
       } else {
-        const j = await res.json().catch(() => ({}));
+        const j = await res.json().catch(() => ({} as any));
         toast({ title: j.error || "Erreur serveur" });
+        const href = `mailto:nolwennalabrestoise@gmail.com?subject=${encodeURIComponent("Abonnement newsletter")}&body=${encodeURIComponent(`Bonjour,\n\nJe souhaite m'abonner à la newsletter.\n\nEmail: ${email}\n`)}`;
+        window.location.href = href;
       }
     } catch (err) {
       toast({ title: "Erreur réseau" });
+      const href = `mailto:nolwennalabrestoise@gmail.com?subject=${encodeURIComponent("Abonnement newsletter")}&body=${encodeURIComponent(`Bonjour,\n\nJe souhaite m'abonner à la newsletter.\n\nEmail: ${email}\n`)}`;
+      window.location.href = href;
     }
   }
 
@@ -107,29 +111,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Hero />
 
-      {/* Newsletter Bar */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <form onSubmit={onSubscribe} className="bg-card border border-border rounded-2xl p-4 flex flex-col sm:flex-row gap-3 items-center">
-            <p className="text-sm text-muted-foreground flex-1">
-              Recevez les nouveaux articles
-            </p>
-            <div className="flex w-full sm:w-auto gap-2">
-              <Input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Votre e-mail"
-                className="rounded-full"
-              />
-              <Button type="submit" className="rounded-full transition duration-200 hover:opacity-90">
-                S’abonner
-              </Button>
-            </div>
-          </form>
-        </div>
-      </section>
+      {/* Newsletter Bar (removed render) */}
 
       {/* Featured Section */}
       <section className="py-16 bg-card/50">
@@ -159,13 +141,25 @@ const Index = () => {
 
       {/* CTA Section */}
       <section className="py-20 bg-accent/30">
-        <div className="container mx-auto px-4 text-center space-y-6">
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Inscrivez-vous à la newsletter pour ne rien manquer des prochaines publications
-          </p>
-          <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground">
-            Recevez les nouveaux articles
-          </h2>
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-3xl flex flex-col md:flex-row items-center gap-4 md:gap-6">
+            <p className="text-lg text-muted-foreground text-center md:text-left">
+              inscrivez-vous à la newsletter pour ne rien manquer des prochaines publications
+            </p>
+            <form onSubmit={onSubscribe} className="w-full md:w-auto flex gap-2 justify-center">
+              <Input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Votre e-mail"
+                className="rounded-full max-w-xs"
+              />
+              <Button type="submit" className="rounded-full transition duration-200 hover:opacity-90">
+                S’abonner
+              </Button>
+            </form>
+          </div>
         </div>
       </section>
 

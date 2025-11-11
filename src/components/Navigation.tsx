@@ -1,22 +1,14 @@
 import { Link } from "react-router-dom";
-import { Search, Menu, ChevronDown } from "lucide-react";
+import { Search, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { site, NAV_CATEGORIES, HIDDEN_CATEGORY_LABELS } from "@/lib/siteContent";
+import { site } from "@/lib/siteContent";
 
 const Navigation = () => {
-  const categoryLinks = NAV_CATEGORIES.filter((c) => !HIDDEN_CATEGORY_LABELS.includes(c.label));
-
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
@@ -36,23 +28,6 @@ const Navigation = () => {
             <Link to="/articles" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               {site.nav.articles}
             </Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-auto px-0 text-sm font-medium text-muted-foreground hover:text-foreground">
-                  <span className="inline-flex items-center gap-1">
-                    {site.nav.thematiques}
-                    <ChevronDown className="h-4 w-4" />
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {categoryLinks.map((link) => (
-                  <Link key={link.href} to={link.href}>
-                    <DropdownMenuItem>{link.label}</DropdownMenuItem>
-                  </Link>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
             <Link to="/a-propos" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               {site.nav.aPropos}
             </Link>
@@ -82,20 +57,6 @@ const Navigation = () => {
                 <Link to="/articles" className="text-lg font-medium text-muted-foreground hover:text-foreground transition-colors py-2">
                   {site.nav.articles}
                 </Link>
-                <div className="pt-2">
-                  <div className="text-sm font-semibold text-foreground mb-2">{site.nav.thematiques}</div>
-                  <div className="flex flex-col">
-                    {categoryLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        to={link.href}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors py-1.5"
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
                 <Link to="/a-propos" className="text-lg font-medium text-muted-foreground hover:text-foreground transition-colors py-2">
                   {site.nav.aPropos}
                 </Link>
