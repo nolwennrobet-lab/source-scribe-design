@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ArticleCard from "@/components/ArticleCard";
@@ -12,7 +12,8 @@ const Articles = () => {
   function normalize(s: string): string {
     return s
       .toLowerCase()
-      .normalize("NFD").replace(/\p{Diacritic}/gu, "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
       .trim();
   }
 
@@ -36,6 +37,33 @@ const Articles = () => {
 
   const [activeCategory, setActiveCategory] = useState("Tous");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  // Read initial query from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q") || "";
+    setSearchQuery(q);
+    setDebouncedQuery(q);
+  }, []);
+
+  // Debounce query
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedQuery(searchQuery), 200);
+    return () => clearTimeout(id);
+  }, [searchQuery]);
+
+  // Sync query to URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (searchQuery) {
+      params.set("q", searchQuery);
+    } else {
+      params.delete("q");
+    }
+    const newUrl = `${window.location.pathname}?${params.toString()}`.replace(/\?$/, "");
+    window.history.replaceState(null, "", newUrl);
+  }, [searchQuery]);
 
   const allArticles = useMemo(
     () =>
@@ -53,11 +81,18 @@ const Articles = () => {
 
   const filteredArticles = allArticles
     .filter(article => activeCategory === "Tous" || article.category === activeCategory)
-    .filter(article => 
-      searchQuery === "" || 
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    .filter(article => {
+      const q = normalize(debouncedQuery);
+      if (q === "") return true;
+      const tokens = q.split(/\s+/).filter(Boolean);
+      const haystack = [
+        normalize(article.title),
+        normalize(article.excerpt ?? ""),
+        normalize(article.category ?? ""),
+        ...(article.tags ?? []).map((t) => normalize(t)),
+      ].join(" ");
+      return tokens.every((t) => haystack.includes(t));
+    });
 
   return (
     <div className="min-h-screen bg-background">

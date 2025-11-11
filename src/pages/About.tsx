@@ -32,7 +32,7 @@ const About = () => {
             <div className="space-y-6">
             <div className="space-y-4">
               <p className="text-muted-foreground leading-relaxed">
-Je suis Nolwenn, brestoise 100% beurre salé et rédactrice spécialisée en contenus pour l’événementiel, les différents lieux et commerces et l’univers de la beauté.
+Nolwenn, brestoise 100% beurre salé et rédactrice spécialisée en contenus pour l’événementiel, les différents lieux et commerces et l’univers de la beauté.
 Passionnée par la valorisation des expériences et des savoir-faire, j’aide les entreprises locales à mettre en lumière leur univers à travers des textes justes, vivants et modernes. Cela me tient à cœur de partager mon univers, ici à Brest, « À la Brestoise ».
               </p>
             </div>

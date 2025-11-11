@@ -28,6 +28,11 @@ const Contact = () => {
             <p className="text-lg text-muted-foreground">
               Un projet de collaboration ? Remplissez ce formulaire et je reviendrai vers vous rapidement.
             </p>
+            <p className="text-sm">
+              <a href={"mailto:nolwennalabrestoise@gmail.com"} className="underline">
+                nolwennalabrestoise@gmail.com
+              </a>
+            </p>
           </div>
 
           {/* Form */}
